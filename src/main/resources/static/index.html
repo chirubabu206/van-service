@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Van Service Tracker</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f4f6f9; padding: 15px; color: #333; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        h1 { color: #2c3e50; font-size: 20px; }
+        .btn-nav { background: #3b82f6; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; }
+
+        .student-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #ef4444; }
+        .student-card.all-paid { border-left-color: #10b981; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .student-info h3 { color: #2c3e50; font-size: 18px; }
+        .student-info p { font-size: 13px; color: #64748b; margin-top: 3px; }
+        .fee-badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+
+        .action-box { background: #fff5f5; border: 1px solid #fee2e2; padding: 12px; border-radius: 8px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .action-box.paid-secure { background: #f0fdf4; border-color: #dcfce7; }
+        .pending-details p { font-size: 14px; font-weight: 600; color: #991b1b; }
+        .pending-details span { font-size: 11px; color: #64748b; display: block; margin-top: 2px; }
+
+        .btn-pay { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-confirmed { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: default; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: all 0.2s ease; }
+        .modal-active { visibility: visible; opacity: 1; }
+        .modal { background: white; padding: 20px; border-radius: 12px; width: 300px; text-align: center; }
+        .pin-input { width: 80%; padding: 10px; font-size: 20px; text-align: center; letter-spacing: 8px; border: 2px solid #cbd5e1; border-radius: 6px; margin: 15px 0; outline: none; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-modal { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h1>Van Maintenance</h1>
+        <p style="font-size: 12px; color:#64748b;">Academic Year: June - April</p>
+    </div>
+    <a href="add-student.html" class="btn-nav">+ Add Student</a>
+</header>
+
+<main id="container"></main>
+
+<div class="modal-overlay" id="pinModal">
+    <div class="modal">
+        <h3>Verify Collection</h3>
+        <p id="modal-msg" style="font-size: 13px; color:#64748b; margin-top:5px;"></p>
+        <input type="password" id="pinCode" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
+        <div class="modal-actions">
+            <button class="btn-modal" style="background:#e2e8f0;" onclick="closeModal()">Cancel</button>
+            <button class="btn-modal" style="background:#10b981; color:white;" onclick="submitPayment()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedTx = {};
+
+    async function loadDashboard() {
+        const res = await fetch('/api/students/list');
+        const students = await res.json();
+        const container = document.getElementById('container');
+        container.innerHTML = students.length === 0 ? '<p style="text-align:center; color:#64748b; margin-top:40px;">No students added yet.</p>' : '';
+
+        students.forEach(s => {
+            const card = document.createElement('div');
+            card.className = `student-card ${s.currentMonthPaid ? 'all-paid' : ''}`;
+            card.innerHTML = `
+                    <div class="card-header">
+                        <div class="student-info">
+                            <h3>${s.name}</h3>
+                            <p>📍 ${s.pickupLocation} | 📞 ${s.phone}</p>
+                        </div>
+                        <div class="fee-badge">₹${s.monthlyFee}</div>
+                    </div>
+                    <div class="action-box ${s.currentMonthPaid ? 'paid-secure' : ''}">
+                        <div class="pending-details">
+                            <p style="${s.currentMonthPaid ? 'color:#16a34a;' : ''}">${s.currentMonthPaid ? s.currentPendingMonth + ' Paid' : 'Urgent: ' + s.currentPendingMonth + ' Fee'}</p>
+                            <span>${s.currentMonthPaid ? 'Logged at: ' + s.paymentTimestamp : 'Due Date: ' + s.dueDay + ' ' + s.currentPendingMonth + ' 2026'}</span>
+                        </div>
+                        ${s.currentMonthPaid ? '<button class="btn-confirmed">✅ Confirmed</button>' : `<button class="btn-pay" onclick="openModal(${s.id}, '${s.name}', '${s.currentPendingMonth}')">Pay Now</button>`}
+                    </div>
+                `;
+            container.appendChild(card);
+        });
+    }
+
+    function openModal(studentId, name, month) {
+        selectedTx = { studentId, name, month };
+        document.getElementById('modal-msg').innerText = `Enter code to settle ${month} payment for ${name}.`;
+        document.getElementById('pinModal').classList.add('modal-active');
+        document.getElementById('pinCode').focus();
+    }
+
+    function closeModal() {
+        document.getElementById('pinModal').classList.remove('modal-active');
+        document.getElementById('pinCode').value = '';
+    }
+
+    async function submitPayment() {
+        const pin = document.getElementById('pinCode').value;
+        const res = await fetch('/api/students/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId: selectedTx.studentId, pin: pin })
+        });
+        const data = await res.json();
+        if(res.ok) {
+            closeModal();
+            loadDashboard();
+        } else {
+            alert(data.error);
+            document.getElementById('pinCode').value = '';
+        }
+    }
+
+    window.onload = loadDashboard;
+</script>
+</body>
+</html>
