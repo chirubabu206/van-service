@@ -12,25 +12,25 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Encrypts passwords securely
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Disabled for smoother cloud deployment configurations
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 ONLY allow public access to the core login/signup routes and frontend styling assets
-                        .requestMatchers("/login", "/signup", "/login.html", "/signup.html", "/css/**", "/js/**").permitAll()
+                        // 🔓 Allow root "/", login endpoints, and assets without authentication
+                        .requestMatchers("/", "/login", "/signup", "/login.html", "/signup.html", "/css/**", "/js/**").permitAll()
 
-                        // 🔒 EVERYTHING else (adding students, months, view panels) requires a successful login session!
+                        // 🔒 Everything else remains strictly protected
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        // 🚪 Points Spring Security to check your native custom login form route
                         .loginPage("/login.html")
-                        .loginProcessingUrl("/login") // Processes native form POST submissions
-                        .defaultSuccessUrl("/index.html", true) // ➔ Forces redirect straight to home panel on success
+                        .loginProcessingUrl("/login")
+                        // 🏁 Change this from /index.html to the root dynamic landing path "/"
+                        .defaultSuccessUrl("/", true)
                         .permitAll()
                 )
                 .logout(logout -> logout
