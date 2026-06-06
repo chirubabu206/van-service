@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Van Ledger Login</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .login-container { background: white; padding: 35px 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 100%; max-width: 380px; text-align: center; }
+        .logo-icon { font-size: 50px; margin-bottom: 10px; display: inline-block; }
+        h2 { color: #1e3a8a; margin-bottom: 5px; font-size: 24px; }
+        p.subtitle { color: #64748b; font-size: 14px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #475569; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .input-wrapper span { position: absolute; left: 12px; color: #94a3b8; font-size: 16px; }
+        input { width: 100%; padding: 12px 12px 12px 38px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #3b82f6; }
+        .btn-login { width: 100%; padding: 14px; background: #1e3a8a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        .btn-login:hover { background: #1d4ed8; }
+        .error-msg { background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
+        .signup-link { display: block; text-align: center; font-size: 13px; color: #1e3a8a; margin-top: 18px; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .signup-link:hover { color: #3b82f6; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <div class="logo-icon">🚌</div>
+    <h2>Van Service Ledger</h2>
+    <p class="subtitle">Sign in to manage your students</p>
+
+    <div class="error-msg" id="errorBox">⚠️ Invalid Mobile Number or Password!</div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <div class="input-wrapper">
+                <span>📞</span>
+                <input type="tel" id="mobileNumber" placeholder="Enter 10-digit number" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <span>🔒</span>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+        </div>
+        <button type="submit" class="btn-login">Sign In</button>
+    </form>
+
+    <a href="signup.html" class="signup-link">New user? Create an account here →</a>
+</div>
+
+<script>
+    // Automatically check URL parameters for standard Spring Security errors
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            document.getElementById('errorBox').style.display = 'block';
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+
+        const mobile = document.getElementById('mobileNumber').value;
+        const password = document.getElementById('password').value;
+        const errorBox = document.getElementById('errorBox');
+
+        errorBox.style.display = 'none';
+
+        // Custom Login submission matching standard URL-encoded spring form data
+        const formData = new URLSearchParams();
+        formData.append('username', mobile); // Spring Security expects 'username' by default
+        formData.append('password', password);
+
+        const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        });
+
+        if (res.redirected) {
+            // If authentication passes, Spring redirects straight to index.html
+            window.location.href = res.url;
+        } else if (res.status === 401) {
+            errorBox.style.display = 'block';
+        } else {
+            // Fallback checking if it bounces back to login with an error tag
+            if (res.url.includes('error')) {
+                errorBox.style.display = 'block';
+            } else {
+                window.location.href = "index.html";
+            }
+        }
+    }
+</script>
+</body>
+</html>

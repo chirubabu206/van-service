@@ -9,7 +9,10 @@
         body { background-color: #f4f6f9; padding: 15px; color: #333; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         h1 { color: #2c3e50; font-size: 20px; }
-        .btn-nav { background: #3b82f6; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; }
+
+        .nav-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-nav { background: #3b82f6; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
+        .btn-trigger { background: #ff9800; color: white; }
 
         .student-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #ef4444; }
         .student-card.all-paid { border-left-color: #10b981; }
@@ -41,7 +44,10 @@
         <h1>Van Maintenance</h1>
         <p style="font-size: 12px; color:#64748b;">Academic Year: June - April</p>
     </div>
-    <a href="add-student.html" class="btn-nav">+ Add Student</a>
+    <div class="nav-actions">
+        <button class="btn-nav btn-trigger" onclick="triggerNextMonth()">🔄 Start New Month</button>
+        <a href="add-student.html" class="btn-nav">+ Add Student</a>
+    </div>
 </header>
 
 <main id="container"></main>
@@ -68,31 +74,34 @@
         container.innerHTML = students.length === 0 ? '<p style="text-align:center; color:#64748b; margin-top:40px;">No students added yet.</p>' : '';
 
         students.forEach(s => {
+            const isPaid = s.currentPaymentStatus; // Aligned cleanly with MySQL backend boolean
             const card = document.createElement('div');
-            card.className = `student-card ${s.currentMonthPaid ? 'all-paid' : ''}`;
+            card.className = `student-card ${isPaid ? 'all-paid' : ''}`;
             card.innerHTML = `
                     <div class="card-header">
                         <div class="student-info">
                             <h3>${s.name}</h3>
-                            <p>📍 ${s.pickupLocation} | 📞 ${s.phone}</p>
+                            <p>📍 Pickup: ${s.pickupLocation || 'Not Assigned'} | 📞 ${s.phone || 'N/A'}</p>
                         </div>
-                        <div class="fee-badge">₹${s.monthlyFee}</div>
+                        <div class="fee-badge">Monthly: ₹${s.monthlyFee}</div>
                     </div>
-                    <div class="action-box ${s.currentMonthPaid ? 'paid-secure' : ''}">
+                    <div class="action-box ${isPaid ? 'paid-secure' : ''}">
                         <div class="pending-details">
-                            <p style="${s.currentMonthPaid ? 'color:#16a34a;' : ''}">${s.currentMonthPaid ? s.currentPendingMonth + ' Paid' : 'Urgent: ' + s.currentPendingMonth + ' Fee'}</p>
-                            <span>${s.currentMonthPaid ? 'Logged at: ' + s.paymentTimestamp : 'Due Date: ' + s.dueDay + ' ' + s.currentPendingMonth + ' 2026'}</span>
-                        </div>
-                        ${s.currentMonthPaid ? '<button class="btn-confirmed">✅ Confirmed</button>' : `<button class="btn-pay" onclick="openModal(${s.id}, '${s.name}', '${s.currentPendingMonth}')">Pay Now</button>`}
+    <p style="${isPaid ? 'color:#16a34a;' : ''}">
+        ${isPaid ? 'Fully Paid' : 'Total Outstanding: ₹' + s.currentPendingFee}
+    </p>
+    <span>${isPaid ? 'Logged at: ' + s.paymentTimestamp : 'Pending Months: ' + (s.pendingMonths || 'None')}</span>
+</div>
+                        ${isPaid ? '<button class="btn-confirmed">✅ Confirmed</button>' : `<button class="btn-pay" onclick="openModal(${s.id}, '${s.name}', ${s.currentPendingFee})">Pay Now</button>`}
                     </div>
                 `;
             container.appendChild(card);
         });
     }
 
-    function openModal(studentId, name, month) {
-        selectedTx = { studentId, name, month };
-        document.getElementById('modal-msg').innerText = `Enter code to settle ${month} payment for ${name}.`;
+    function openModal(studentId, name, pendingAmount) {
+        selectedTx = { studentId, name };
+        document.getElementById('modal-msg').innerText = `Enter code to settle ₹${pendingAmount} collection balance for ${name}.`;
         document.getElementById('pinModal').classList.add('modal-active');
         document.getElementById('pinCode').focus();
     }
@@ -112,10 +121,23 @@
         const data = await res.json();
         if(res.ok) {
             closeModal();
-            loadDashboard();
+            loadDashboard(); // Refreshes UI with live database state
         } else {
             alert(data.error);
             document.getElementById('pinCode').value = '';
+        }
+    }
+
+    // Interactive endpoint call to run the backend loop and reset monthly values
+    async function triggerNextMonth() {
+        if (confirm("Are you sure you want to transition all active records into the next month's billing frame? Unpaid debt balances will be carried forward automatically.")) {
+            const res = await fetch('/api/students/trigger-next-month', { method: 'POST' });
+            if (res.ok) {
+                alert("Billing calculations rolled forward successfully across all accounts!");
+                loadDashboard();
+            } else {
+                alert("Billing operational shift encountered an processing impediment.");
+            }
         }
     }
 

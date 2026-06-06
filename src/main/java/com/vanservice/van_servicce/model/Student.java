@@ -1,7 +1,6 @@
 package com.vanservice.van_servicce.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "students")
@@ -12,36 +11,89 @@ public class Student {
     private Long id;
 
     private String name;
-    private String phone;
-    private String pickupLocation;
-    private Double monthlyFee;
-    private Integer dueDay; // Value from 1 to 31 saved during registration
-
-    // Tracking active current month status
-    private String currentPendingMonth = "June";
-    private boolean isCurrentMonthPaid = false;
+    private double monthlyFee;
+    private double currentPendingFee;
+    private int dueDay;
+    private boolean isCurrentPaymentStatus;
     private String paymentTimestamp;
+    private String pendingMonths = "June"; // Default starting month when a student is added
 
-    // Default Constructor
-    public Student() {}
+    // 🔀 NEW FIELDS: Added to capture registration details from your HTML form!
+    private String pickupLocation;
+    private String phone;
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public String getPickupLocation() { return pickupLocation; }
-    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
-    public Double getMonthlyFee() { return monthlyFee; }
-    public void setMonthlyFee(Double monthlyFee) { this.monthlyFee = monthlyFee; }
-    public Integer getDueDay() { return dueDay; }
-    public void setDueDay(Integer dueDay) { this.dueDay = dueDay; }
-    public String getCurrentPendingMonth() { return currentPendingMonth; }
-    public void setCurrentPendingMonth(String currentPendingMonth) { this.currentPendingMonth = currentPendingMonth; }
-    public boolean isCurrentMonthPaid() { return isCurrentMonthPaid; }
-    public void setCurrentMonthPaid(boolean currentMonthPaid) { this.isCurrentMonthPaid = currentMonthPaid; }
-    public String getPaymentTimestamp() { return paymentTimestamp; }
-    public void setPaymentTimestamp(String paymentTimestamp) { this.paymentTimestamp = paymentTimestamp; }
+    // ===================================================================
+    // GETTERS AND SETTERS
+    // ===================================================================
+
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public double getMonthlyFee() {
+        return monthlyFee;
+    }
+    public void setMonthlyFee(double monthlyFee) {
+        this.monthlyFee = monthlyFee;
+    }
+
+    public double getCurrentPendingFee() {
+        return currentPendingFee;
+    }
+    public void setCurrentPendingFee(double currentPendingFee) {
+        this.currentPendingFee = currentPendingFee;
+    }
+
+    public int getDueDay() {
+        return dueDay;
+    }
+    public void setDueDay(int dueDay) {
+        this.dueDay = dueDay;
+    }
+
+    public boolean isCurrentPaymentStatus() {
+        return isCurrentPaymentStatus;
+    }
+    public void setCurrentPaymentStatus(boolean isCurrentPaymentStatus) {
+        this.isCurrentPaymentStatus = isCurrentPaymentStatus;
+    }
+
+    public String getPaymentTimestamp() {
+        return paymentTimestamp;
+    }
+    public void setPaymentTimestamp(String paymentTimestamp) {
+        this.paymentTimestamp = paymentTimestamp;
+    }
+
+    public String getPendingMonths() {
+        return pendingMonths;
+    }
+    public void setPendingMonths(String pendingMonths) {
+        this.pendingMonths = pendingMonths;
+    }
+
+    // 🔄 NEW GETTERS & SETTERS: Links your fields directly to your frontend variables
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+    public void setPickupLocation(String pickupLocation) {
+        this.pickupLocation = pickupLocation;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 }

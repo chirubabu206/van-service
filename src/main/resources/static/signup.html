@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Van Ledger Account</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .signup-container { background: white; padding: 35px 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 380px; text-align: center; }
+        .logo-icon { font-size: 50px; margin-bottom: 10px; display: inline-block; }
+        h2 { color: #1e3a8a; margin-bottom: 5px; font-size: 24px; }
+        p.subtitle { color: #64748b; font-size: 14px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #475569; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .input-wrapper span { position: absolute; left: 12px; color: #94a3b8; font-size: 16px; }
+        input { width: 100%; padding: 12px 12px 12px 38px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #3b82f6; }
+        .btn-signup { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        .btn-signup:hover { background: #059669; }
+        .alert-box { padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
+        .alert-error { background: #fee2e2; color: #dc2626; }
+        .alert-success { background: #d1fae5; color: #065f46; }
+    </style>
+</head>
+<body>
+
+<div class="signup-container">
+    <div class="logo-icon">📝</div>
+    <h2>Create Account</h2>
+    <p class="subtitle">Join the Van Ledger network tracking tool</p>
+
+    <div class="alert-box" id="alertBox"></div>
+
+    <form id="signupForm" onsubmit="handleSignup(event)">
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <div class="input-wrapper">
+                <span>📞</span>
+                <input type="tel" id="mobileNumber" placeholder="Enter 10-digit mobile" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Choose Password</label>
+            <div class="input-wrapper">
+                <span>🔒</span>
+                <input type="password" id="password" placeholder="Create a strong password" required>
+            </div>
+        </div>
+        <button type="submit" class="btn-signup">Register Account</button>
+        <a href="login.html" style="display:block; text-align:center; font-size:13px; color:#1e3a8a; margin-top:15px; text-decoration:none; font-weight:600;">← Back to Sign In</a>
+    </form>
+</div>
+
+<script>
+    async function handleSignup(e) {
+        e.preventDefault();
+
+        const mobile = document.getElementById('mobileNumber').value;
+        const password = document.getElementById('password').value;
+        const alertBox = document.getElementById('alertBox');
+
+        alertBox.style.display = 'none';
+
+        const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mobileNumber: mobile, password: password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alertBox.className = "alert-box alert-success";
+            alertBox.innerText = "✓ " + data.success;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 2000);
+        } else {
+            alertBox.className = "alert-box alert-error";
+            alertBox.innerText = "⚠️ " + data.error;
+            alertBox.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
