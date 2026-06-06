@@ -35,8 +35,7 @@ public class StudentController {
 
         if (principal instanceof UserDetails) {
             String loggedInMobile = ((UserDetails) principal).getUsername();
-            User currentUser = userRepo.findByMobileNumber(loggedInMobile);
-
+            User currentUser = userRepo.findByMobileNumber(loggedInMobile).orElse(null);
             if (currentUser != null) {
                 // 📌 Bind this student explicitly to the logged-in driver/user account entity
                 student.setUser(currentUser);
@@ -64,8 +63,7 @@ public class StudentController {
 
         if (principal instanceof UserDetails) {
             String loggedInMobile = ((UserDetails) principal).getUsername();
-            User currentUser = userRepo.findByMobileNumber(loggedInMobile);
-
+            User currentUser = userRepo.findByMobileNumber(loggedInMobile).orElse(null);
             if (currentUser != null) {
                 // 🔍 Isolation Filter: Return ONLY the students created by this specific user account ID
                 return ResponseEntity.ok(studentRepo.findByUserId(currentUser.getId()));
@@ -119,8 +117,7 @@ public class StudentController {
 
         if (principal instanceof UserDetails) {
             String loggedInMobile = ((UserDetails) principal).getUsername();
-            User currentUser = userRepo.findByMobileNumber(loggedInMobile);
-            if (currentUser != null) {
+            User currentUser = userRepo.findByMobileNumber(loggedInMobile).orElse(null);            if (currentUser != null) {
                 activeUserStudents = studentRepo.findByUserId(currentUser.getId());
             }
         }
