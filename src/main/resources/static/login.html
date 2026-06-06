@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,21 +31,25 @@
     <h2>Van Service Ledger</h2>
     <p class="subtitle">Sign in to manage your students</p>
 
+    <!-- ⚠️ This box will appear automatically if Spring Security sends back an error parameter -->
     <div class="error-msg" id="errorBox">⚠️ Invalid Mobile Number or Password!</div>
 
-    <form id="loginForm" onsubmit="handleLogin(event)">
+    <!-- 🔄 Native POST submission routed through Thymeleaf directly to Spring Security's filter -->
+    <form th:action="@{/login}" method="POST">
         <div class="form-group">
             <label>Mobile Number</label>
             <div class="input-wrapper">
                 <span>📞</span>
-                <input type="tel" id="mobileNumber" placeholder="Enter 10-digit number" required>
+                <!-- name="username" tells Spring Security what parameter to read -->
+                <input type="tel" id="mobileNumber" name="username" placeholder="Enter 10-digit number" required>
             </div>
         </div>
         <div class="form-group">
             <label>Password</label>
             <div class="input-wrapper">
                 <span>🔒</span>
-                <input type="password" id="password" placeholder="Enter your password" required>
+                <!-- name="password" matches the standard Spring internal credential token key -->
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
         </div>
         <button type="submit" class="btn-login">Sign In</button>
@@ -55,46 +59,11 @@
 </div>
 
 <script>
-    // Automatically check URL parameters for standard Spring Security errors
+    // Automatically checks URL parameters. If Spring redirects back with /login?error, the red box pops up!
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
             document.getElementById('errorBox').style.display = 'block';
-        }
-    }
-
-    async function handleLogin(e) {
-        e.preventDefault();
-
-        const mobile = document.getElementById('mobileNumber').value;
-        const password = document.getElementById('password').value;
-        const errorBox = document.getElementById('errorBox');
-
-        errorBox.style.display = 'none';
-
-        // Custom Login submission matching standard URL-encoded spring form data
-        const formData = new URLSearchParams();
-        formData.append('username', mobile); // Spring Security expects 'username' by default
-        formData.append('password', password);
-
-        const res = await fetch('/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData
-        });
-
-        if (res.redirected) {
-            // If authentication passes, Spring redirects straight to index.html
-            window.location.href = res.url;
-        } else if (res.status === 401) {
-            errorBox.style.display = 'block';
-        } else {
-            // Fallback checking if it bounces back to login with an error tag
-            if (res.url.includes('error')) {
-                errorBox.style.display = 'block';
-            } else {
-                window.location.href = "index.html";
-            }
         }
     }
 </script>
