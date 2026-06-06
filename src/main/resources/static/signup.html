@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,21 +31,22 @@
     <h2>Create Account</h2>
     <p class="subtitle">Join the Van Ledger network tracking tool</p>
 
-    <div class="alert-box" id="alertBox"></div>
+    <div class="alert-box alert-error" id="errorBox">⚠️ Phone number already exists or registration failed!</div>
+    <div class="alert-box alert-success" id="successBox">✓ Account created successfully! Redirecting...</div>
 
-    <form id="signupForm" onsubmit="handleSignup(event)">
+    <form th:action="@{/signup}" method="POST">
         <div class="form-group">
             <label>Mobile Number</label>
             <div class="input-wrapper">
                 <span>📞</span>
-                <input type="tel" id="mobileNumber" placeholder="Enter 10-digit mobile" required>
+                <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="Enter 10-digit mobile" required>
             </div>
         </div>
         <div class="form-group">
             <label>Choose Password</label>
             <div class="input-wrapper">
                 <span>🔒</span>
-                <input type="password" id="password" placeholder="Create a strong password" required>
+                <input type="password" id="password" name="password" placeholder="Create a strong password" required>
             </div>
         </div>
         <button type="submit" class="btn-signup">Register Account</button>
@@ -54,34 +55,16 @@
 </div>
 
 <script>
-    async function handleSignup(e) {
-        e.preventDefault();
-
-        const mobile = document.getElementById('mobileNumber').value;
-        const password = document.getElementById('password').value;
-        const alertBox = document.getElementById('alertBox');
-
-        alertBox.style.display = 'none';
-
-        const res = await fetch('/api/auth/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mobileNumber: mobile, password: password })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-            alertBox.className = "alert-box alert-success";
-            alertBox.innerText = "✓ " + data.success;
-            alertBox.style.display = 'block';
+    // Handles error and success message view blocks based on URL responses
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            document.getElementById('errorBox').style.display = 'block';
+        } else if (urlParams.has('success')) {
+            document.getElementById('successBox').style.display = 'block';
             setTimeout(() => {
                 window.location.href = "login.html";
-            }, 2000);
-        } else {
-            alertBox.className = "alert-box alert-error";
-            alertBox.innerText = "⚠️ " + data.error;
-            alertBox.style.display = 'block';
+            }, 2500);
         }
     }
 </script>
