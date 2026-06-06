@@ -1,10 +1,14 @@
 package com.vanservice.van_servicce.controller;
 
 import com.vanservice.van_servicce.model.Student;
+import com.vanservice.van_servicce.model.User;
 import com.vanservice.van_servicce.StudentRepository;
+import com.vanservice.van_servicce.repository.UserRepository; // 🚨 Added to fetch your user data
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder; // 🚨 Added for Session Tracking
+import org.springframework.security.core.userdetails.UserDetails;    // 🚨 Added for Session Tracking
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -15,16 +19,36 @@ import java.util.*;
 public class StudentController {
 
     private final StudentRepository studentRepo;
+    private final UserRepository userRepo; // 🚨 Injected to bind student tracking tags
     private static final String SECRET_PIN = "1234"; // Your dad's secure 4-digit code
 
-    // Constructor Injection — clears the "Field injection is not recommended" warning completely!
-    public StudentController(StudentRepository studentRepo) {
+    // Constructor Injection — Clears the field injection warnings and pulls user database context
+    public StudentController(StudentRepository studentRepo, UserRepository userRepo) {
         this.studentRepo = studentRepo;
+        this.userRepo = userRepo;
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Student> addStudent(@RequestBody Student student) {
-        // 🛡️ SECURITY STEP: Manually lock in the initial academic year metrics
+    public ResponseEntity<?> addStudent(@RequestBody Student student) {
+        // 👤 SECURITY STEP 1: Identify who is logged in right now
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof UserDetails) {
+            String loggedInMobile = ((UserDetails) principal).getUsername();
+            User currentUser = userRepo.findByMobileNumber(loggedInMobile);
+
+            if (currentUser != null) {
+                // 📌 Bind this student explicitly to the logged-in driver/user account
+                student.setUser(currentUser);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User account context mismatch.");
+            }
+        } else {
+            // ❌ Stop the insert query if a rogue guest tries to hit this endpoint directly
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied. Please sign in first.");
+        }
+
+        // 🛡️ FINANCIAL STEP: Manually lock in the initial academic year metrics
         student.setPendingMonths("June");
         student.setCurrentPendingFee(student.getMonthlyFee());
         student.setCurrentPaymentStatus(false); // They start out owing June's fee
@@ -34,9 +58,21 @@ public class StudentController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<Collection<Student>> listStudents() {
-        // Pulls directly from your local MySQL van_db tables
-        return ResponseEntity.ok(studentRepo.findAll());
+    public ResponseEntity<?> listStudents() {
+        // 👤 IDENTITY STEP: Identify the current logged-in session user
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof UserDetails) {
+            String loggedInMobile = ((UserDetails) principal).getUsername();
+            User currentUser = userRepo.findByMobileNumber(loggedInMobile);
+
+            if (currentUser != null) {
+                // 🔍 Oneway Filter: Return ONLY the students created by this specific user account ID
+                return ResponseEntity.ok(studentRepo.findByUserId(currentUser.getId()));
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access Denied.");
     }
 
     @PostMapping("/verify-payment")
@@ -51,24 +87,20 @@ public class StudentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
 
-        // Fetch directly from your database
+        // Fetch directly from your cloud database
         Optional<Student> studentOpt = studentRepo.findById(studentId);
         if (studentOpt.isPresent()) {
             Student student = studentOpt.get();
 
-            // Matched precisely with your Student.java variable name
             student.setCurrentPaymentStatus(true);
-
-            // FIX: Reset financial balance back to zero since they just settled their dues!
-            student.setCurrentPendingFee(0);
-
+            student.setCurrentPendingFee(0); // Reset financial balance back to zero
             student.setPendingMonths(""); // Clear pending months text list
 
             // Format precise payment timestamp (e.g., "06 Jun, 12:10 PM")
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM, hh:mm a", Locale.ENGLISH);
             student.setPaymentTimestamp(LocalDateTime.now().format(formatter));
 
-            studentRepo.save(student); // Saves modifications straight back to MySQL
+            studentRepo.save(student); // Saves modifications straight back to cloud PostgreSQL
 
             response.put("success", "Payment approved!");
             response.put("timestamp", student.getPaymentTimestamp());
@@ -79,10 +111,23 @@ public class StudentController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    // Keep track of the system's current operating month at the top of the loop logic
     @PostMapping("/trigger-next-month")
     public ResponseEntity<String> triggerNextMonthPayments() {
-        List<Student> allStudents = studentRepo.findAll();
+        // Fetch only students belonging to the logged-in user to avoid shifting months for other drivers' grids
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Student> activeUserStudents = new ArrayList<>();
+
+        if (principal instanceof UserDetails) {
+            String loggedInMobile = ((UserDetails) principal).getUsername();
+            User currentUser = userRepo.findByMobileNumber(loggedInMobile);
+            if (currentUser != null) {
+                activeUserStudents = studentRepo.findByUserId(currentUser.getId());
+            }
+        }
+
+        if (activeUserStudents.isEmpty()) {
+            return ResponseEntity.ok("No students found to update for this user session.");
+        }
 
         // 1. Define our ordered sequence of months for the academic van year
         List<String> academicMonths = Arrays.asList(
@@ -91,14 +136,13 @@ public class StudentController {
         );
 
         // 2. Figure out what the current month is by looking at who is already in the system
-        String currentSystemMonth = "June"; // Default fallback start
+        String currentSystemMonth = "June";
 
-        for (Student student : allStudents) {
+        for (Student student : activeUserStudents) {
             String monthsText = student.getPendingMonths();
             if (monthsText != null && !monthsText.trim().isEmpty()) {
                 String[] split = monthsText.split(", ");
                 String lastMonth = split[split.length - 1];
-                // Find the highest advanced month currently running in our database records
                 if (academicMonths.indexOf(lastMonth) > academicMonths.indexOf(currentSystemMonth)) {
                     currentSystemMonth = lastMonth;
                 }
@@ -109,26 +153,22 @@ public class StudentController {
         int currentSystemIndex = academicMonths.indexOf(currentSystemMonth);
         String nextMonthName;
         if (currentSystemIndex != -1 && currentSystemIndex < academicMonths.size() - 1) {
-            nextMonthName = academicMonths.get(currentSystemIndex + 1); // e.g., "June" -> "July", "July" -> "August"
+            nextMonthName = academicMonths.get(currentSystemIndex + 1);
         } else {
-            nextMonthName = "June"; // Reset safety loop back to start if out of bounds
+            nextMonthName = "June";
         }
 
-        // 4. Update every student based on this unified target month
-        for (Student student : allStudents) {
+        // 4. Update every student belonging to this specific user session
+        for (Student student : activeUserStudents) {
             double monthlyFee = student.getMonthlyFee();
             double currentPending = student.getCurrentPendingFee();
 
             if (currentPending == 0) {
-                // Case A: Student was fully paid up!
-                // They start the upcoming system month fresh with a single month's fee.
                 student.setCurrentPendingFee(monthlyFee);
                 student.setPendingMonths(nextMonthName);
                 student.setCurrentPaymentStatus(false);
             } else {
-                // Case B: They already owe money! Stacks debt + appends the new month
                 student.setCurrentPendingFee(currentPending + monthlyFee);
-
                 String currentMonthsText = student.getPendingMonths();
                 if (currentMonthsText == null || currentMonthsText.trim().isEmpty()) {
                     student.setPendingMonths(nextMonthName);
@@ -139,7 +179,7 @@ public class StudentController {
             }
         }
 
-        studentRepo.saveAll(allStudents);
-        return ResponseEntity.ok("Monthly billing cycles updated successfully locally!");
+        studentRepo.saveAll(activeUserStudents);
+        return ResponseEntity.ok("Monthly billing cycles updated successfully!");
     }
 }

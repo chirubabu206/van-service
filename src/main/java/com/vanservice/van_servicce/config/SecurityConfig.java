@@ -12,24 +12,32 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Encrypts passwords so even hackers can't read them
+        return new BCryptPasswordEncoder(); // Encrypts passwords securely
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Disabled for smoother cloud deployment configurations
                 .authorizeHttpRequests(auth -> auth
-                        // 🌍 EXPLICITLY MAKE SIGNUP PATHS PUBLIC:
-                        .requestMatchers("/login.html", "/signup.html", "/api/auth/**", "/css/**", "/js/**").permitAll()
+                        // 🔓 ONLY allow public access to the core login/signup routes and frontend styling assets
+                        .requestMatchers("/login", "/signup", "/login.html", "/signup.html", "/css/**", "/js/**").permitAll()
+
+                        // 🔒 EVERYTHING else (adding students, months, view panels) requires a successful login session!
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
+                        // 🚪 Points Spring Security to check your native custom login form route
                         .loginPage("/login.html")
-                        .defaultSuccessUrl("/index.html", true)
+                        .loginProcessingUrl("/login") // Processes native form POST submissions
+                        .defaultSuccessUrl("/index.html", true) // ➔ Forces redirect straight to home panel on success
                         .permitAll()
                 )
-                .logout(logout -> logout.permitAll());
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login.html?logout")
+                        .permitAll()
+                );
 
         return http.build();
     }
