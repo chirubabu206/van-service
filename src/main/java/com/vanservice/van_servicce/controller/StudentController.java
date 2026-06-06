@@ -3,12 +3,12 @@ package com.vanservice.van_servicce.controller;
 import com.vanservice.van_servicce.model.Student;
 import com.vanservice.van_servicce.model.User;
 import com.vanservice.van_servicce.StudentRepository;
-import com.vanservice.van_servicce.repository.UserRepository; // 🚨 Added to fetch your user data
+import com.vanservice.van_servicce.UserRepository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder; // 🚨 Added for Session Tracking
-import org.springframework.security.core.userdetails.UserDetails;    // 🚨 Added for Session Tracking
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -19,10 +19,10 @@ import java.util.*;
 public class StudentController {
 
     private final StudentRepository studentRepo;
-    private final UserRepository userRepo; // 🚨 Injected to bind student tracking tags
+    private final UserRepository userRepo;
     private static final String SECRET_PIN = "1234"; // Your dad's secure 4-digit code
 
-    // Constructor Injection — Clears the field injection warnings and pulls user database context
+    // Constructor Injection — clears the field injection warnings and pulls user database context cleanly
     public StudentController(StudentRepository studentRepo, UserRepository userRepo) {
         this.studentRepo = studentRepo;
         this.userRepo = userRepo;
@@ -30,7 +30,7 @@ public class StudentController {
 
     @PostMapping("/add")
     public ResponseEntity<?> addStudent(@RequestBody Student student) {
-        // 👤 SECURITY STEP 1: Identify who is logged in right now
+        // 👤 SECURITY STEP: Identify who is logged in right now via session cookies
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (principal instanceof UserDetails) {
@@ -38,17 +38,17 @@ public class StudentController {
             User currentUser = userRepo.findByMobileNumber(loggedInMobile);
 
             if (currentUser != null) {
-                // 📌 Bind this student explicitly to the logged-in driver/user account
+                // 📌 Bind this student explicitly to the logged-in driver/user account entity
                 student.setUser(currentUser);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User account context mismatch.");
             }
         } else {
-            // ❌ Stop the insert query if a rogue guest tries to hit this endpoint directly
+            // ❌ Stop the insert query entirely if a guest tries to bypass the page and hit the API endpoint
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied. Please sign in first.");
         }
 
-        // 🛡️ FINANCIAL STEP: Manually lock in the initial academic year metrics
+        // 🛡️ FINANCIAL INITIALIZATION: Manually lock in the initial academic year metrics
         student.setPendingMonths("June");
         student.setCurrentPendingFee(student.getMonthlyFee());
         student.setCurrentPaymentStatus(false); // They start out owing June's fee
@@ -67,7 +67,7 @@ public class StudentController {
             User currentUser = userRepo.findByMobileNumber(loggedInMobile);
 
             if (currentUser != null) {
-                // 🔍 Oneway Filter: Return ONLY the students created by this specific user account ID
+                // 🔍 Isolation Filter: Return ONLY the students created by this specific user account ID
                 return ResponseEntity.ok(studentRepo.findByUserId(currentUser.getId()));
             }
         }
@@ -93,7 +93,7 @@ public class StudentController {
             Student student = studentOpt.get();
 
             student.setCurrentPaymentStatus(true);
-            student.setCurrentPendingFee(0); // Reset financial balance back to zero
+            student.setCurrentPendingFee(0); // Reset financial balance back to zero since they just paid
             student.setPendingMonths(""); // Clear pending months text list
 
             // Format precise payment timestamp (e.g., "06 Jun, 12:10 PM")
@@ -126,7 +126,7 @@ public class StudentController {
         }
 
         if (activeUserStudents.isEmpty()) {
-            return ResponseEntity.ok("No students found to update for this user session.");
+            return ResponseEntity.ok("No active students found to update for this user session.");
         }
 
         // 1. Define our ordered sequence of months for the academic van year

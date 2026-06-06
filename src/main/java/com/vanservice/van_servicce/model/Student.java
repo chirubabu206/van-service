@@ -1,48 +1,69 @@
 package com.vanservice.van_servicce.model;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "students")
-public class Student {
+public class Student implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @Column(name = "student_name", nullable = false)
+    private String studentName;
+
+    @Column(name = "monthly_fee", nullable = false)
     private double monthlyFee;
+
+    @Column(name = "current_pending_fee")
     private double currentPendingFee;
-    private int dueDay;
-    private boolean isCurrentPaymentStatus;
+
+    @Column(name = "pending_months")
+    private String pendingMonths;
+
+    @Column(name = "current_payment_status")
+    private boolean currentPaymentStatus;
+
+    @Column(name = "payment_timestamp")
     private String paymentTimestamp;
-    private String pendingMonths = "June"; // Default starting month when a student is added
 
-    // 🔀 NEW FIELDS: Added to capture registration details from your HTML form!
-    private String pickupLocation;
-    private String phone;
+    // 🔗 RELATIONAL CONNECTION: Maps each student row to their respective User account
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = true) // Set to true initially to prevent legacy crash mapping
+    private User user;
 
-    // ===================================================================
-    // GETTERS AND SETTERS
-    // ===================================================================
+    // ==================== CONSTRUCTORS ====================
+    public Student() {
+    }
 
+    public Student(String studentName, double monthlyFee) {
+        this.studentName = studentName;
+        this.monthlyFee = monthlyFee;
+    }
+
+    // ==================== GETTERS AND SETTERS ====================
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getStudentName() {
+        return studentName;
     }
-    public void setName(String name) {
-        this.name = name;
+
+    public void setStudentName(String studentName) {
+        this.studentName = studentName;
     }
 
     public double getMonthlyFee() {
         return monthlyFee;
     }
+
     public void setMonthlyFee(double monthlyFee) {
         this.monthlyFee = monthlyFee;
     }
@@ -50,50 +71,40 @@ public class Student {
     public double getCurrentPendingFee() {
         return currentPendingFee;
     }
+
     public void setCurrentPendingFee(double currentPendingFee) {
         this.currentPendingFee = currentPendingFee;
-    }
-
-    public int getDueDay() {
-        return dueDay;
-    }
-    public void setDueDay(int dueDay) {
-        this.dueDay = dueDay;
-    }
-
-    public boolean isCurrentPaymentStatus() {
-        return isCurrentPaymentStatus;
-    }
-    public void setCurrentPaymentStatus(boolean isCurrentPaymentStatus) {
-        this.isCurrentPaymentStatus = isCurrentPaymentStatus;
-    }
-
-    public String getPaymentTimestamp() {
-        return paymentTimestamp;
-    }
-    public void setPaymentTimestamp(String paymentTimestamp) {
-        this.paymentTimestamp = paymentTimestamp;
     }
 
     public String getPendingMonths() {
         return pendingMonths;
     }
+
     public void setPendingMonths(String pendingMonths) {
         this.pendingMonths = pendingMonths;
     }
 
-    // 🔄 NEW GETTERS & SETTERS: Links your fields directly to your frontend variables
-    public String getPickupLocation() {
-        return pickupLocation;
-    }
-    public void setPickupLocation(String pickupLocation) {
-        this.pickupLocation = pickupLocation;
+    public boolean isCurrentPaymentStatus() {
+        return currentPaymentStatus;
     }
 
-    public String getPhone() {
-        return phone;
+    public void setCurrentPaymentStatus(boolean currentPaymentStatus) {
+        this.currentPaymentStatus = currentPaymentStatus;
     }
-    public void setPhone(String phone) {
-        this.phone = phone;
+
+    public String getPaymentTimestamp() {
+        return paymentTimestamp;
+    }
+
+    public void setPaymentTimestamp(String paymentTimestamp) {
+        this.paymentTimestamp = paymentTimestamp;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
