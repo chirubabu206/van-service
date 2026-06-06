@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +13,10 @@
         .nav-actions { display: flex; gap: 10px; align-items: center; }
         .btn-nav { background: #3b82f6; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
         .btn-trigger { background: #ff9800; color: white; }
+
+        /* 🚪 RED LOGOUT BUTTON STYLE */
+        .btn-logout { background: #ef4444; color: white; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
+        .btn-logout:hover { background: #dc2626; }
 
         .student-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #ef4444; }
         .student-card.all-paid { border-left-color: #10b981; }
@@ -47,6 +51,10 @@
     <div class="nav-actions">
         <button class="btn-nav btn-trigger" onclick="triggerNextMonth()">🔄 Start New Month</button>
         <a href="add-student.html" class="btn-nav">+ Add Student</a>
+
+        <form th:action="@{/logout}" method="POST" style="display: inline; margin: 0; padding: 0;">
+            <button type="submit" class="btn-logout">Logout 🚪</button>
+        </form>
     </div>
 </header>
 
@@ -74,25 +82,27 @@
         container.innerHTML = students.length === 0 ? '<p style="text-align:center; color:#64748b; margin-top:40px;">No students added yet.</p>' : '';
 
         students.forEach(s => {
-            const isPaid = s.currentPaymentStatus; // Aligned cleanly with MySQL backend boolean
+            const isPaid = s.currentPaymentStatus;
             const card = document.createElement('div');
             card.className = `student-card ${isPaid ? 'all-paid' : ''}`;
+
+            // 🚨 CONTEXT CORRECTION: s.name updated to s.studentName to prevent undefined field labels
             card.innerHTML = `
                     <div class="card-header">
                         <div class="student-info">
-                            <h3>${s.name}</h3>
-                            <p>📍 Pickup: ${s.pickupLocation || 'Not Assigned'} | 📞 ${s.phone || 'N/A'}</p>
+                            <h3>${s.studentName}</h3>
+                            <p>📍 Account Status: Registered Member Ledger Entry</p>
                         </div>
                         <div class="fee-badge">Monthly: ₹${s.monthlyFee}</div>
                     </div>
                     <div class="action-box ${isPaid ? 'paid-secure' : ''}">
                         <div class="pending-details">
-    <p style="${isPaid ? 'color:#16a34a;' : ''}">
-        ${isPaid ? 'Fully Paid' : 'Total Outstanding: ₹' + s.currentPendingFee}
-    </p>
-    <span>${isPaid ? 'Logged at: ' + s.paymentTimestamp : 'Pending Months: ' + (s.pendingMonths || 'None')}</span>
-</div>
-                        ${isPaid ? '<button class="btn-confirmed">✅ Confirmed</button>' : `<button class="btn-pay" onclick="openModal(${s.id}, '${s.name}', ${s.currentPendingFee})">Pay Now</button>`}
+                            <p style="${isPaid ? 'color:#16a34a;' : ''}">
+                                ${isPaid ? 'Fully Paid' : 'Total Outstanding: ₹' + s.currentPendingFee}
+                            </p>
+                            <span>${isPaid ? 'Logged at: ' + s.paymentTimestamp : 'Pending Months: ' + (s.pendingMonths || 'None')}</span>
+                        </div>
+                        ${isPaid ? '<button class="btn-confirmed">✅ Confirmed</button>' : `<button class="btn-pay" onclick="openModal(${s.id}, '${s.studentName}', ${s.currentPendingFee})">Pay Now</button>`}
                     </div>
                 `;
             container.appendChild(card);
@@ -118,17 +128,17 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ studentId: selectedTx.studentId, pin: pin })
         });
-        const data = await res.json();
+
         if(res.ok) {
             closeModal();
-            loadDashboard(); // Refreshes UI with live database state
+            loadDashboard();
         } else {
+            const data = await res.json();
             alert(data.error);
             document.getElementById('pinCode').value = '';
         }
     }
 
-    // Interactive endpoint call to run the backend loop and reset monthly values
     async function triggerNextMonth() {
         if (confirm("Are you sure you want to transition all active records into the next month's billing frame? Unpaid debt balances will be carried forward automatically.")) {
             const res = await fetch('/api/students/trigger-next-month', { method: 'POST' });
@@ -136,7 +146,7 @@
                 alert("Billing calculations rolled forward successfully across all accounts!");
                 loadDashboard();
             } else {
-                alert("Billing operational shift encountered an processing impediment.");
+                alert("Billing operational shift encountered a processing impediment.");
             }
         }
     }

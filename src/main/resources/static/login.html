@@ -20,6 +20,7 @@
         .btn-login { width: 100%; padding: 14px; background: #1e3a8a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
         .btn-login:hover { background: #1d4ed8; }
         .error-msg { background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
+        .logout-msg { background: #dcfce7; color: #15803d; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
         .signup-link { display: block; text-align: center; font-size: 13px; color: #1e3a8a; margin-top: 18px; text-decoration: none; font-weight: 600; transition: color 0.2s; }
         .signup-link:hover { color: #3b82f6; text-decoration: underline; }
     </style>
@@ -31,39 +32,43 @@
     <h2>Van Service Ledger</h2>
     <p class="subtitle">Sign in to manage your students</p>
 
-    <!-- ⚠️ This box will appear automatically if Spring Security sends back an error parameter -->
     <div class="error-msg" id="errorBox">⚠️ Invalid Mobile Number or Password!</div>
 
-    <!-- 🔄 Native POST submission routed through Thymeleaf directly to Spring Security's filter -->
+    <div class="logout-msg" id="logoutBox">🚪 You have been successfully logged out.</div>
+
     <form th:action="@{/login}" method="POST">
         <div class="form-group">
             <label>Mobile Number</label>
             <div class="input-wrapper">
                 <span>📞</span>
-                <!-- name="username" tells Spring Security what parameter to read -->
-                <input type="tel" id="mobileNumber" name="username" placeholder="Enter 10-digit number" required>
+                <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="Enter 10-digit number" required>
             </div>
         </div>
         <div class="form-group">
             <label>Password</label>
             <div class="input-wrapper">
                 <span>🔒</span>
-                <!-- name="password" matches the standard Spring internal credential token key -->
                 <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
         </div>
         <button type="submit" class="btn-login">Sign In</button>
     </form>
 
-    <a href="signup.html" class="signup-link">New user? Create an account here →</a>
+    <a th:href="@{/signup.html}" class="signup-link">New user? Create an account here →</a>
 </div>
 
 <script>
-    // Automatically checks URL parameters. If Spring redirects back with /login?error, the red box pops up!
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
+
+        // Displays error banner if Spring Security redirects back with ?error
         if (urlParams.has('error')) {
             document.getElementById('errorBox').style.display = 'block';
+        }
+
+        // Displays a green success banner if they clicked your new logout button (?logout)
+        if (urlParams.has('logout')) {
+            document.getElementById('logoutBox').style.display = 'block';
         }
     }
 </script>
