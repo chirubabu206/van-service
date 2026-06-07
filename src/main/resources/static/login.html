@@ -36,7 +36,8 @@
 
     <div class="logout-msg" id="logoutBox">🚪 You have been successfully logged out.</div>
 
-    <form action="/login" th:action="@{/login}" method="POST">        <div class="form-group">
+    <form action="/login" th:action="@{/login}" method="POST">
+        <div class="form-group">
             <label>Mobile Number</label>
             <div class="input-wrapper">
                 <span>📞</span>
@@ -53,7 +54,7 @@
         <button type="submit" class="btn-login">Sign In</button>
     </form>
 
-    <a th:href="@{/signup.html}" class="signup-link">New user? Create an account here →</a>
+    <a href="/signup.html" th:href="@{/signup.html}" class="signup-link">New user? Create an account here →</a>
 </div>
 
 <script>
@@ -65,7 +66,7 @@
             document.getElementById('errorBox').style.display = 'block';
         }
 
-        // Displays a green success banner if they clicked your new logout button (?logout)
+        // Displays a green success banner if they clicked your logout button (?logout)
         if (urlParams.has('logout')) {
             document.getElementById('logoutBox').style.display = 'block';
         }
