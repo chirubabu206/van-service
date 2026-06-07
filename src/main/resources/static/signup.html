@@ -34,7 +34,7 @@
     <div class="alert-box alert-error" id="errorBox">⚠️ Phone number already exists or registration failed!</div>
     <div class="alert-box alert-success" id="successBox">✓ Account created successfully! Redirecting...</div>
 
-    <form th:action="@{/signup}" method="POST">
+    <form action="/signup" th:action="@{/signup}" method="POST">
         <div class="form-group">
             <label>Mobile Number</label>
             <div class="input-wrapper">
@@ -50,12 +50,12 @@
             </div>
         </div>
         <button type="submit" class="btn-signup">Register Account</button>
-        <a href="login.html" style="display:block; text-align:center; font-size:13px; color:#1e3a8a; margin-top:15px; text-decoration:none; font-weight:600;">← Back to Sign In</a>
+
+        <a href="/login.html" th:href="@{/login.html}" style="display:block; text-align:center; font-size:13px; color:#1e3a8a; margin-top:15px; text-decoration:none; font-weight:600;">← Back to Sign In</a>
     </form>
 </div>
 
 <script>
-    // Handles error and success message view blocks based on URL responses
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
