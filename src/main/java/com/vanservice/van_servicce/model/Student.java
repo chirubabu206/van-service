@@ -29,9 +29,21 @@ public class Student implements Serializable {
     @Column(name = "payment_timestamp")
     private String paymentTimestamp;
 
+    // 🌟 NEW FIELD: Parent's Phone Number
+    @Column(name = "parent_phone", nullable = true)
+    private String parentPhone;
+
+    // 🌟 NEW FIELD: Pickup Location Stop
+    @Column(name = "pickup_location", nullable = true)
+    private String pickupLocation;
+
+    // 🌟 NEW FIELD: Monthly Custom Due Day (e.g., 1, 5, 10, 15, 20)
+    @Column(name = "due_day", nullable = true)
+    private Integer dueDay = 15; // Defaults to the 15th of the month
+
     // 🔗 RELATIONAL CONNECTION: Maps each student row to their respective User account
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = true) // Set to true initially to prevent legacy crash mapping
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     // ==================== CONSTRUCTORS ====================
@@ -98,6 +110,31 @@ public class Student implements Serializable {
 
     public void setPaymentTimestamp(String paymentTimestamp) {
         this.paymentTimestamp = paymentTimestamp;
+    }
+
+    // 🌟 GETTERS AND SETTERS FOR NEW FIELDS
+    public String getParentPhone() {
+        return parentPhone;
+    }
+
+    public void setParentPhone(String parentPhone) {
+        this.parentPhone = parentPhone;
+    }
+
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+
+    public void setPickupLocation(String pickupLocation) {
+        this.pickupLocation = pickupLocation;
+    }
+
+    public Integer getDueDay() {
+        return dueDay;
+    }
+
+    public void setDueDay(Integer dueDay) {
+        this.dueDay = dueDay;
     }
 
     public User getUser() {

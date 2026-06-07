@@ -24,11 +24,29 @@
     <form id="studentForm" onsubmit="saveStudent(event)">
         <div class="form-group">
             <label>Student Name</label>
-            <input type="text" id="name" required>
+            <input type="text" id="name" required placeholder="Enter student full name">
+        </div>
+        <div class="form-group">
+            <label>Parent's Phone</label>
+            <input type="tel" id="phone" required placeholder="Enter 10-digit mobile">
+        </div>
+        <div class="form-group">
+            <label>Pickup Location Stop</label>
+            <input type="text" id="location" required placeholder="e.g. Sector 4 Crossroad">
         </div>
         <div class="form-group">
             <label>Monthly Fee (₹)</label>
-            <input type="number" id="fee" required>
+            <input type="number" id="fee" required placeholder="e.g. 1500">
+        </div>
+        <div class="form-group">
+            <label>Monthly Custom Due Day</label>
+            <select id="dueDay" required>
+                <option value="1">1st of the month</option>
+                <option value="5">5th of the month</option>
+                <option value="10">10th of the month</option>
+                <option value="15" selected>15th of the month</option>
+                <option value="20">20th of the month</option>
+            </select>
         </div>
         <button type="submit" class="btn-submit">Save Student</button>
         <a href="index.html" style="display:block; text-align:center; font-size:13px; color:#64748b; margin-top:12px; text-decoration:none; font-weight: 600;">← Cancel & Return</a>
@@ -39,9 +57,13 @@
     async function saveStudent(e) {
         e.preventDefault();
 
+        // 🧠 SYNCHRONIZED PAYLOAD: Variable keys match updated Student.java exactly!
         const payload = {
             studentName: document.getElementById('name').value.trim(),
-            monthlyFee: parseFloat(document.getElementById('fee').value)
+            parentPhone: document.getElementById('phone').value.trim(),
+            pickupLocation: document.getElementById('location').value.trim(),
+            monthlyFee: parseFloat(document.getElementById('fee').value),
+            dueDay: parseInt(document.getElementById('dueDay').value)
         };
 
         try {
@@ -52,7 +74,7 @@
             });
 
             if (res.ok) {
-                alert("✓ Student saved successfully!");
+                alert("✓ Student profile saved successfully with custom metrics!");
                 window.location.href = "index.html";
             } else {
                 const textErr = await res.text();
