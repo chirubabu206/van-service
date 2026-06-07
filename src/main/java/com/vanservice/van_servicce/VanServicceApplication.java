@@ -1,6 +1,6 @@
 package com.vanservice.van_servicce;
 
-// 🔀 IMPORT LINES: Tells Java exactly where to look for your models and repositories
+// 🔀 IMPORT LINES: Linking models and repositories cleanly across project structures
 import com.vanservice.van_servicce.model.User;
 import com.vanservice.van_servicce.UserRepository;
 
@@ -17,20 +17,29 @@ public class VanServicceApplication {
 		SpringApplication.run(VanServicceApplication.class, args);
 	}
 
+	/**
+	 * 🏁 AUTOMATED SEED DATA RUNNER:
+	 * This bean fires automatically every single time your application boots up on Render.
+	 * It checks if your dad's master admin mobile account exists, and if not, it configures it.
+	 */
 	@Bean
 	public CommandLineRunner initDefaultUser(UserRepository userRepo, PasswordEncoder encoder) {
 		return args -> {
-			String adminMobile = "9704552622"; // Master login account
+			String adminMobile = "9704552622"; // Master layout access key
 
-			// Checks your repository safely now
-			if (userRepo.findByMobileNumber(adminMobile).isEmpty()) {
+			// 🛡️ SECURITY TRIMMING: Safely look up the cleaned number to prevent duplicate data row skips
+			if (userRepo.findByMobileNumber(adminMobile.trim()).isEmpty()) {
 				User admin = new User();
-				admin.setMobileNumber(adminMobile);
+				admin.setMobileNumber(adminMobile.trim());
+
+				// Encrypts "chiru123" into a clean, standalone BCrypt signature block
 				admin.setPassword(encoder.encode("chiru123"));
-				admin.setRole("ADMIN");
+				admin.setRole("ADMIN"); // Gives master privileges directly to this seed profile
 
 				userRepo.save(admin);
-				System.out.println(">>> Security Alert: Default admin profile initialized successfully in database!");
+				System.out.println(">>> [DATABASE INITIALIZER] Success: Master admin account created cleanly.");
+			} else {
+				System.out.println(">>> [DATABASE INITIALIZER] Verification: Admin profile row already active in Neon.");
 			}
 		};
 	}

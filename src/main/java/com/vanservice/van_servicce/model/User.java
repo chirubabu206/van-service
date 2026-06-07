@@ -14,9 +14,10 @@ public class User {
     private String mobileNumber;
 
     @Column(nullable = false)
-    private String password; // This will store a secure cryptographic hash, not plain text!
+    private String password; // Stores secure cryptographic hash strings
 
-    private String role = "ADMIN"; // Default role for your dad
+    // 🔄 CORRECTED: Set default role to "USER" for standard registrations
+    private String role = "USER";
 
     // Getters and Setters
     public Long getId() { return id; }

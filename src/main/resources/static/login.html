@@ -21,6 +21,10 @@
         .btn-login:hover { background: #1d4ed8; }
         .error-msg { background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
         .logout-msg { background: #dcfce7; color: #15803d; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
+
+        /* 🌟 NEW STYLE: Green accent container for account registration notifications */
+        .success-msg { background: #d1fae5; color: #065f46; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; text-align: left; font-weight: 500; }
+
         .signup-link { display: block; text-align: center; font-size: 13px; color: #1e3a8a; margin-top: 18px; text-decoration: none; font-weight: 600; transition: color 0.2s; }
         .signup-link:hover { color: #3b82f6; text-decoration: underline; }
     </style>
@@ -33,8 +37,9 @@
     <p class="subtitle">Sign in to manage your students</p>
 
     <div class="error-msg" id="errorBox">⚠️ Invalid Mobile Number or Password!</div>
-
     <div class="logout-msg" id="logoutBox">🚪 You have been successfully logged out.</div>
+
+    <div class="success-msg" id="successBox">✓ Account created successfully! Please sign in below.</div>
 
     <form action="/login" th:action="@{/login}" method="POST">
         <div class="form-group">
@@ -69,6 +74,11 @@
         // Displays a green success banner if they clicked your logout button (?logout)
         if (urlParams.has('logout')) {
             document.getElementById('logoutBox').style.display = 'block';
+        }
+
+        // 🌟 NEW SCRIPT CHECK: Captures the redirected registration confirmation token
+        if (urlParams.has('success')) {
+            document.getElementById('successBox').style.display = 'block';
         }
     }
 </script>
