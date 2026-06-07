@@ -14,33 +14,33 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(); // Securely hashes and checks passwords using BCrypt
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Disabled to facilitate direct multi-user HTML form post processing
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 Open public access to the login/signup html pages and static assets
-                        .requestMatchers("/login.html", "/signup.html", "/css/**", "/js/**").permitAll()
+                        // 🔓 OPEN PUBLIC GATES: Added "/signup" endpoint path so registration requests bypass filters freely
+                        .requestMatchers("/login.html", "/signup.html", "/signup", "/css/**", "/js/**").permitAll()
 
-                        // 🔒 Everything else (like index.html, dashboard API routes) requires logging in
+                        // 🔒 STRICT PRIVACY LOCK: Everything else (index.html dashboard, student roster lists, billing APIs) requires a session cookie
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login.html")         // Direct fallback link
-                        .loginProcessingUrl("/login")     // The POST URL from your HTML form action
-                        .usernameParameter("mobileNumber")
-                        .passwordParameter("password")
-                        .defaultSuccessUrl("/index.html", true) // 🏁 Once logged in successfully, force redirect to dashboard file
+                        .loginPage("/login.html")         // Direct frontend login interface view template
+                        .loginProcessingUrl("/login")     // The processing endpoint that matches your login form action
+                        .usernameParameter("mobileNumber") // Maps login form's phone number text property to standard authentication context
+                        .passwordParameter("password")     // Maps password input element data
+                        .defaultSuccessUrl("/index.html", true) // 🏁 Drops authenticated drivers straight onto the ledger tracking dashboard
                         .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login.html?logout")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
+                        .invalidateHttpSession(true) // Destroys server memory reference keys instantly upon exit
+                        .deleteCookies("JSESSIONID") // Deletes the local browser storage cookie file reference
                         .permitAll()
                 );
 
