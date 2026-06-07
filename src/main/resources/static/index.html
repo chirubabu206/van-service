@@ -1,157 +1,177 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Van Service Tracker</title>
+    <title>Van Service Master Ledger</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f4f6f9; padding: 15px; color: #333; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        h1 { color: #2c3e50; font-size: 20px; }
+        body { background-color: #f8fafc; color: #1e293b; padding: 30px; }
+        .dashboard-container { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+        h1 { color: #1e3a8a; font-size: 26px; display: flex; align-items: center; gap: 10px; }
+        .btn-group { display: flex; gap: 12px; }
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none; border: none; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-add { background-color: #3b82f6; color: white; }
+        .btn-add:hover { background-color: #2563eb; }
+        .btn-trigger { background-color: #8b5cf6; color: white; }
+        .btn-trigger:hover { background-color: #7c3aed; }
+        .btn-logout { background-color: #ef4444; color: white; }
+        .btn-logout:hover { background-color: #dc2626; }
 
-        .nav-actions { display: flex; gap: 10px; align-items: center; }
-        .btn-nav { background: #3b82f6; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
-        .btn-trigger { background: #ff9800; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+        th { background-color: #f1f5f9; color: #475569; font-weight: 600; padding: 14px; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: middle; }
+        tr:hover { background-color: #f8fafc; }
 
-        /* 🚪 RED LOGOUT BUTTON STYLE */
-        .btn-logout { background: #ef4444; color: white; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
-        .btn-logout:hover { background: #dc2626; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; }
+        .badge-paid { background-color: #d1fae5; color: #065f46; }
+        .badge-pending { background-color: #fee2e2; color: #dc2626; }
+        .badge-month { background-color: #e0f2fe; color: #0369a1; }
 
-        .student-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #ef4444; }
-        .student-card.all-paid { border-left-color: #10b981; }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .student-info h3 { color: #2c3e50; font-size: 18px; }
-        .student-info p { font-size: 13px; color: #64748b; margin-top: 3px; }
-        .fee-badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+        .action-input-group { display: flex; gap: 6px; align-items: center; }
+        .pin-input { width: 70px; padding: 6px; border: 2px solid #cbd5e1; border-radius: 6px; font-size: 13px; text-align: center; outline: none; }
+        .pin-input:focus { border-color: #3b82f6; }
+        .btn-verify { padding: 6px 12px; background-color: #10b981; color: white; font-size: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-verify:hover { background-color: #059669; }
 
-        .action-box { background: #fff5f5; border: 1px solid #fee2e2; padding: 12px; border-radius: 8px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .action-box.paid-secure { background: #f0fdf4; border-color: #dcfce7; }
-        .pending-details p { font-size: 14px; font-weight: 600; color: #991b1b; }
-        .pending-details span { font-size: 11px; color: #64748b; display: block; margin-top: 2px; }
-
-        .btn-pay { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-confirmed { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: default; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; visibility: hidden; opacity: 0; transition: all 0.2s ease; }
-        .modal-active { visibility: visible; opacity: 1; }
-        .modal { background: white; padding: 20px; border-radius: 12px; width: 300px; text-align: center; }
-        .pin-input { width: 80%; padding: 10px; font-size: 20px; text-align: center; letter-spacing: 8px; border: 2px solid #cbd5e1; border-radius: 6px; margin: 15px 0; outline: none; }
-        .modal-actions { display: flex; gap: 10px; }
-        .btn-modal { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .phone-link { color: #2563eb; text-decoration: none; font-weight: 500; }
+        .phone-link:hover { text-decoration: underline; }
+        .text-muted { color: #94a3b8; font-style: italic; }
     </style>
 </head>
 <body>
 
-<header>
-    <div>
-        <h1>Van Maintenance</h1>
-        <p style="font-size: 12px; color:#64748b;">Academic Year: June - April</p>
-    </div>
-    <div class="nav-actions">
-        <button class="btn-nav btn-trigger" onclick="triggerNextMonth()">🔄 Start New Month</button>
-        <a href="add-student.html" class="btn-nav">+ Add Student</a>
-
-        <form th:action="@{/logout}" method="POST" style="display: inline; margin: 0; padding: 0;">
-            <button type="submit" class="btn-logout">Logout 🚪</button>
-        </form>
-    </div>
-</header>
-
-<main id="container"></main>
-
-<div class="modal-overlay" id="pinModal">
-    <div class="modal">
-        <h3>Verify Collection</h3>
-        <p id="modal-msg" style="font-size: 13px; color:#64748b; margin-top:5px;"></p>
-        <input type="password" id="pinCode" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
-        <div class="modal-actions">
-            <button class="btn-modal" style="background:#e2e8f0;" onclick="closeModal()">Cancel</button>
-            <button class="btn-modal" style="background:#10b981; color:white;" onclick="submitPayment()">Confirm</button>
+<div class="dashboard-container">
+    <div class="header-flex">
+        <h1>🚌 Van Service Management Dashboard</h1>
+        <div class="btn-group">
+            <a href="add-student.html" class="btn btn-add">➕ Add Student</a>
+            <button onclick="triggerNextMonth()" class="btn btn-trigger">🗓️ Next Month Billing</button>
+            <button onclick="logoutAccount()" class="btn btn-logout">🚪 Sign Out</button>
         </div>
     </div>
+
+    <table id="ledgerTable">
+        <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>📞 Parent Phone</th>
+            <th>📍 Pickup Location</th>
+            <th>Monthly Fee</th>
+            <th>Outstanding</th>
+            <th>Pending Months</th>
+            <th>Status</th>
+            <th>Payment Collection (Enter 4-Digit Pin)</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
 </div>
 
 <script>
-    let selectedTx = {};
+    // 🔄 Auto Fetch on view initialization
+    window.onload = loadDashboardData;
 
-    async function loadDashboard() {
-        const res = await fetch('/api/students/list');
-        const students = await res.json();
-        const container = document.getElementById('container');
-        container.innerHTML = students.length === 0 ? '<p style="text-align:center; color:#64748b; margin-top:40px;">No students added yet.</p>' : '';
+    async function loadDashboardData() {
+        try {
+            const res = await fetch('/api/students/list');
+            if (res.status === 403 || res.status === 401) {
+                window.location.href = "/login.html";
+                return;
+            }
 
-        students.forEach(s => {
-            const isPaid = s.currentPaymentStatus;
-            const card = document.createElement('div');
-            card.className = `student-card ${isPaid ? 'all-paid' : ''}`;
+            const students = await res.json();
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = ''; // Clean view memory grid
 
-            // 🚨 CONTEXT CORRECTION: s.name updated to s.studentName to prevent undefined field labels
-            card.innerHTML = `
-                    <div class="card-header">
-                        <div class="student-info">
-                            <h3>${s.studentName}</h3>
-                            <p>📍 Account Status: Registered Member Ledger Entry</p>
-                        </div>
-                        <div class="fee-badge">Monthly: ₹${s.monthlyFee}</div>
-                    </div>
-                    <div class="action-box ${isPaid ? 'paid-secure' : ''}">
-                        <div class="pending-details">
-                            <p style="${isPaid ? 'color:#16a34a;' : ''}">
-                                ${isPaid ? 'Fully Paid' : 'Total Outstanding: ₹' + s.currentPendingFee}
-                            </p>
-                            <span>${isPaid ? 'Logged at: ' + s.paymentTimestamp : 'Pending Months: ' + (s.pendingMonths || 'None')}</span>
-                        </div>
-                        ${isPaid ? '<button class="btn-confirmed">✅ Confirmed</button>' : `<button class="btn-pay" onclick="openModal(${s.id}, '${s.studentName}', ${s.currentPendingFee})">Pay Now</button>`}
-                    </div>
+            if (students.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b; padding:30px;">No students registered under your driver account yet. Click Add Student above to start!</td></tr>`;
+                return;
+            }
+
+            students.forEach(student => {
+                const row = document.createElement('tr');
+
+                // Formats fallback states if tracking entries are legacy empty strings
+                const displayPhone = student.parentPhone ? `<a class="phone-link" href="tel:${student.parentPhone}">📞 ${student.parentPhone}</a>` : `<span class="text-muted">—</span>`;
+                const displayLocation = student.pickupLocation ? `📍 <strong>${student.pickupLocation}</strong>` : `<span class="text-muted">—</span>`;
+
+                row.innerHTML = `
+                    <td><strong>${student.studentName}</strong></td>
+                    <td>${displayPhone}</td>
+                    <td>${displayLocation}</td>
+                    <td>₹${student.monthlyFee}</td>
+                    <td style="font-weight:700; color:${student.currentPendingFee > 0 ? '#dc2626' : '#059669'}">₹${student.currentPendingFee}</td>
+                    <td><span class="badge badge-month">${student.pendingMonths}</span></td>
+                    <td>
+                        <span class="badge ${student.currentPaymentStatus ? 'badge-paid' : 'badge-pending'}">
+                            ${student.currentPaymentStatus ? '✓ Fully Paid' : '⚠️ Unpaid'}
+                        </span>
+                    </td>
+                    <td>
+                        ${student.currentPaymentStatus ?
+                    `<span style="color:#059669; font-size:12px; font-weight:600;">Approved: ${student.paymentTimestamp || ''}</span>` :
+                    `<div class="action-input-group">
+                                <input type="password" maxlength="4" placeholder="PIN" id="pin-${student.id}" class="pin-input">
+                                <button onclick="collectPayment(${student.id})" class="btn-verify">Verify</button>
+                             </div>`
+                }
+                    </td>
                 `;
-            container.appendChild(card);
-        });
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Dashboard fetch error:", error);
+        }
     }
 
-    function openModal(studentId, name, pendingAmount) {
-        selectedTx = { studentId, name };
-        document.getElementById('modal-msg').innerText = `Enter code to settle ₹${pendingAmount} collection balance for ${name}.`;
-        document.getElementById('pinModal').classList.add('modal-active');
-        document.getElementById('pinCode').focus();
-    }
+    async function collectPayment(studentId) {
+        const pinField = document.getElementById(`pin-${studentId}`);
+        if (!pinField || !pinField.value) {
+            alert("Please input your father's secure 4-digit code first.");
+            return;
+        }
 
-    function closeModal() {
-        document.getElementById('pinModal').classList.remove('modal-active');
-        document.getElementById('pinCode').value = '';
-    }
+        const payload = { studentId: studentId.toString(), pin: pinField.value.trim() };
 
-    async function submitPayment() {
-        const pin = document.getElementById('pinCode').value;
-        const res = await fetch('/api/students/verify-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId: selectedTx.studentId, pin: pin })
-        });
+        try {
+            const res = await fetch('/api/students/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
 
-        if(res.ok) {
-            closeModal();
-            loadDashboard();
-        } else {
-            const data = await res.json();
-            alert(data.error);
-            document.getElementById('pinCode').value = '';
+            if (res.ok) {
+                alert("✓ " + result.success);
+                loadDashboardData(); // Refresh the grid data seamlessly
+            } else {
+                alert("⚠️ " + (result.error || "Verification failed"));
+            }
+        } catch (err) {
+            alert("Connection error executing transactional data pipelines.");
         }
     }
 
     async function triggerNextMonth() {
-        if (confirm("Are you sure you want to transition all active records into the next month's billing frame? Unpaid debt balances will be carried forward automatically.")) {
-            const res = await fetch('/api/students/trigger-next-month', { method: 'POST' });
-            if (res.ok) {
-                alert("Billing calculations rolled forward successfully across all accounts!");
-                loadDashboard();
-            } else {
-                alert("Billing operational shift encountered a processing impediment.");
+        if (confirm("Are you sure you want to trigger the next billing cycle for all your active route students?")) {
+            try {
+                const res = await fetch('/api/students/trigger-next-month', { method: 'POST' });
+                if (res.ok) {
+                    alert(await res.text());
+                    loadDashboardData();
+                }
+            } catch (err) {
+                alert("Error triggering billing sequences.");
             }
         }
     }
 
-    window.onload = loadDashboard;
+    function logoutAccount() {
+        window.location.href = "/login.html?logout";
+    }
 </script>
 </body>
 </html>
